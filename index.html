@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Eunice Exclusiva - Donde la moda cobra vida</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase -->
+  <script type="module">
+    // Import Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAJJ9YHnM-crSlzflKkJT2p96r2jmPekWU",
+      authDomain: "ropausada-2b9c6.firebaseapp.com",
+      projectId: "ropausada-2b9c6",
+      storageBucket: "ropausada-2b9c6.appspot.com",
+      messagingSenderId: "103550940842",
+      appId: "1:103550940842:web:029bfaf4db6d322acd42d3",
+      measurementId: "G-M1Y5SLDV2P"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+
+    window.firebaseDB = db;
+    window.firebaseStorage = storage;
+  </script>
+  <style>
+    body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #f7e1a8, #e8a4a4, #d1c4e9); color: #333; min-height: 100vh; margin:0; padding:0; }
+    .hero { background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/3da25492-83e3-4513-a347-716e48479355.png'); background-size: cover; background-position: center; }
+    .product-card img { transition: transform 0.3s ease; cursor:pointer; border-radius:0.5rem; }
+    .product-card:hover img { transform: scale(1.05); }
+    .admin-panel { display: none; }
+    .image-preview-container img { display: inline-block; max-width: 80px; max-height: 80px; border:1px solid #ccc; border-radius:0.25rem; margin-right:5px; }
+    #image-modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.8); justify-content:center; align-items:center; flex-direction:column; }
+    #image-modal img { max-width:90vw; max-height:70vh; border-radius:0.5rem; box-shadow:0 0 20px rgba(255,255,255,0.3); margin-bottom:10px; touch-action: pan-y; cursor: grab; }
+    #image-modal .close-btn { position:absolute; top:1rem; right:1rem; background:#fff; border:none; font-size:1.5rem; font-weight:bold; border-radius:0.5rem; width:2.5rem; height:2.5rem; cursor:pointer; line-height:1; text-align:center; padding:0; }
+    .dropdown-btn { background-color:#fff; border:2px solid #ec4899; color:#ec4899; padding:0.5rem 1rem; border-radius:0.5rem; font-weight:500; display:flex; align-items:center; justify-content:space-between; width:180px; transition:all 0.2s; }
+    .dropdown-btn:hover { background-color:#ec4899; color:#fff; }
+    .dropdown-menu { display:none; position:absolute; right:0; margin-top:0.5rem; background-color:#fff; border:1px solid #ddd; border-radius:0.5rem; box-shadow:0 5px 15px rgba(0,0,0,0.2); z-index:50; min-width:180px; }
+    .dropdown-menu a { display:block; padding:0.5rem 1rem; color:#333; font-size:0.95rem; text-decoration:none; transition:all 0.2s; }
+    .dropdown-menu a:hover { background-color:#ec4899; color:#fff; border-radius:0.5rem; }
+    @media (max-width: 1024px) { .products-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 768px) { nav{width:100%; display:flex; justify-content:center; margin-top:0.5rem;} .dropdown-btn{width:100%; max-width:220px;} .products-grid{grid-template-columns:1fr;} .hero h2{font-size:2rem;} .hero p{font-size:1rem;} .product-card img{max-height:200px;} header div h1{font-size:1.5rem;} header div p{font-size:0.85rem;} }
+  </style>
+</head>
+<body>
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+      <div class="text-center md:text-left">
+        <h1 class="text-2xl font-bold text-pink-600">Eunice Exclusiva</h1>
+        <p class="text-sm text-gray-600">“Donde la moda cobra vida”</p>
+      </div>
+      <div class="flex items-center mt-2 md:mt-0 space-x-2">
+        <nav class="relative">
+          <div class="relative inline-block text-left">
+            <button id="dropdown-btn" class="dropdown-btn">
+              Categorías
+              <svg class="ml-2 h-5 w-5 text-pink-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            <div id="dropdown-menu" class="dropdown-menu">
+              <a href="#" class="category-link" data-category="all">Todas</a>
+              <a href="#" class="category-link" data-category="mujer">Ropa para Mujer</a>
+              <a href="#" class="category-link" data-category="ninos">Ropa para Niños</a>
+              <a href="#" class="category-link" data-category="hombre">Ropa para Hombre</a>
+              <a href="#" class="category-link" data-category="accesorios">Accesorios</a>
+              <a href="#" class="category-link" data-category="hogar">Hogar y Textiles</a>
+              <a href="#" class="category-link" data-category="ofertas">Ofertas y Promociones</a>
+            </div>
+          </div>
+        </nav>
+        <button id="admin-btn" class="bg-pink-600 text-white px-4 py-2 rounded hover:bg-pink-700">Admin</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero h-96 flex items-center justify-center text-center text-white px-4">
+    <div>
+      <h2 class="text-4xl font-bold mb-4">Bienvenido a Eunice Exclusiva</h2>
+      <p class="text-xl">Ropa usada de calidad a precios accesibles</p>
+    </div>
+  </section>
+
+  <main class="container mx-auto px-4 py-8">
+    <div id="products" class="products-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </main>
+
+  <div id="image-modal" class="flex">
+    <button class="close-btn" aria-label="Cerrar">&times;</button>
+    <img src="" alt="Imagen ampliada del producto" />
+  </div>
+
+  <section id="admin-panel" class="admin-panel container mx-auto px-4 py-8">
+    <div class="flex justify-end mb-4">
+      <button id="logout-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm">Salir</button>
+    </div>
+    <h3 class="text-2xl font-bold mb-4">Panel de Administración</h3>
+    <form id="product-form" class="mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <input type="text" id="product-name" placeholder="Nombre del Producto" class="border p-2 rounded" required />
+        <select id="product-category" class="border p-2 rounded" required>
+          <option value="mujer">Ropa para Mujer</option>
+          <option value="ninos">Ropa para Niños</option>
+          <option value="hombre">Ropa para Hombre</option>
+          <option value="accesorios">Accesorios</option>
+          <option value="hogar">Hogar y Textiles</option>
+          <option value="ofertas">Ofertas y Promociones</option>
+        </select>
+        <textarea id="product-description" placeholder="Descripción (ej. usado en buenas condiciones)" class="border p-2 rounded" required></textarea>
+        <input type="number" id="product-price" placeholder="Precio (USD)" min="0" step="0.01" class="border p-2 rounded" required />
+        <div>
+          <input type="file" id="product-image" accept="image/*" class="border p-2 rounded" multiple required />
+          <div id="image-preview-container" class="image-preview-container mt-2"></div>
+        </div>
+      </div>
+      <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded mt-4 hover:bg-green-700">Agregar Producto</button>
+    </form>
+    <div id="admin-products" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </section>
+
+  <footer class="bg-white text-center py-4"></footer>
+
+  <script type="module">
+    import { window } from "https://www.gstatic.com/firebasejs/10.1.0/firebase-app.js";
+    import { firebaseDB, firebaseStorage } from "./"; // ya inicializado en el head
+
+    let isAdmin = false;
+
+    const productsContainer = document.getElementById('products');
+    const adminProductsContainer = document.getElementById('admin-products');
+
+    async function loadProducts() {
+      productsContainer.innerHTML = '';
+      const querySnapshot = await getDocs(collection(firebaseDB, 'products'));
+      querySnapshot.forEach(docSnap => {
+        const p = docSnap.data();
+        const card = document.createElement('div');
+        card.className = 'product-card bg-white p-4 rounded shadow-md';
+        card.innerHTML = `
+          <img src="${p.image[0]}" alt="${p.name}" class="w-full h-auto max-h-72 object-contain rounded mb-4" />
+          <h4 class="text-lg font-bold">${p.name}</h4>
+          <p class="text-sm text-gray-600 mb-1">Categoría: ${p.category}</p>
+          <p class="text-sm mb-1">${p.description}</p>
+          <p class="text-pink-600 font-semibold text-lg">Precio: $${p.price.toFixed(2)} USD</p>
+        `;
+        productsContainer.appendChild(card);
+      });
+    }
+
+    document.getElementById('product-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      if(!isAdmin){ alert('Solo el administrador puede agregar productos.'); return; }
+
+      const name = document.getElementById('product-name').value.trim();
+      const category = document.getElementById('product-category').value;
+      const description = document.getElementById('product-description').value.trim();
+      const price = parseFloat(document.getElementById('product-price').value);
+      const files = document.getElementById('product-image').files;
+      if(files.length === 0){ alert('Selecciona al menos una imagen'); return; }
+
+      const images = [];
+      for(let i=0; i<Math.min(files.length, 4); i++){
+        const fileRef = ref(firebaseStorage, `products/${Date.now()}_${files[i].name}`);
+        const snapshot = await uploadBytes(fileRef, files[i]);
+        const url = await getDownloadURL(snapshot.ref);
+        images.push(url);
+      }
+
+      await addDoc(collection(firebaseDB, 'products'), { name, category, description, price, image: images });
+      alert('Producto agregado exitosamente');
+      e.target.reset();
+      document.getElementById('image-preview-container').innerHTML = '';
+      loadProducts();
+    });
+
+    document.getElementById('admin-btn').addEventListener('click', () => {
+      const password = prompt('Ingresa la contraseña de admin:');
+      if(password === '2005'){
+        isAdmin = true;
+        document.getElementById('admin-panel').style.display = 'block';
+        alert('Acceso concedido. Eres el administrador.');
+      } else {
+        alert('Contraseña incorrecta.');
+      }
+    });
+
+    loadProducts();
+  </script>
+</body>
+</html>
